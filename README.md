@@ -1,5 +1,11 @@
 # bag_to_matplotlib
 
+## Env
+```
+python 2.7
+matplotlib 3.1.0
+```
+
 ## Excution
 ```
 1. python bag_to_csv.py
