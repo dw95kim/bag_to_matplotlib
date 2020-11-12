@@ -1,3 +1,11 @@
+#######################################
+# HOW TO USE IT
+# python save.py \
+# --opv_file '/media/usrg-asus/T7/Civil/2020-09-26-06_53_20/OPV_bag/200926_06_GPS_from_mavros_pos.txt' \
+# --kla_file '/media/usrg-asus/T7/Civil/2020-09-26-06_53_20/KLA_ras_bag/200926_06_GPS_from_Rasberry.txt' \
+# --save_file './200926_ras_distance.txt'
+#######################################
+
 import csv
 import math
 import argparse
