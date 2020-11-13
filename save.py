@@ -244,13 +244,43 @@ for time in range(start_time, end_time + 1):
     else:
         distance_list.append(0)
 
+#######################################################
+# Linear Interpolation
+# ex) distance list = [0, 0, 1, 0, 0, 0, 5, 0] --> [0, 0, 1, 2, 3, 4, 5, 0]
+flag = 0 # 0 : find start position / 1 : find end position
+interpol_distance_list = distance_list
+
+cnt = 0
+if (interpol_distance_list[0] == 0):
+    while True:
+        cnt += 1
+        if (interpol_distance_list[cnt] != 0):
+            break
+
+start_index = cnt
+end_index = 0
+
+for i in range(start_index, len(interpol_distance_list)):
+    if (flag == 0 and interpol_distance_list[i] == 0):
+        start_index = i-1
+        flag = 1
+    elif (flag == 1 and interpol_distance_list[i] != 0):
+        end_index = i
+        flag = 0
+        
+        interval = end_index - start_index
+        add_value = (interpol_distance_list[end_index] - interpol_distance_list[start_index])/float(interval)
+
+        for j in range(1, interval):
+            interpol_distance_list[start_index + j] = interpol_distance_list[start_index] + add_value * j
+
 save_file = open(args.save_file, 'w')
 strFormat = '%-20s%-20s%-20s%-20s%-20s%-20s%-20s%-20s\n'
 index_Out = strFormat % ('Timestamp', 'Distance', 'OPV_lat', 'OPV_lon', 'OPV_alt', 'KLA_lat', 'KLA_lon', 'KLA_alt')
 save_file.write(index_Out)
 
 for i in range(len(time_list)):
-    string_Out = strFormat % (str(time_list[i]), str(distance_list[i]), \
+    string_Out = strFormat % (str(time_list[i]), str(interpol_distance_list[i]), \
                             str(all_avg_opv_lat_list[i]), str(all_avg_opv_lon_list[i]), str(all_avg_opv_alt_list[i]), \
                             str(all_avg_kla_lat_list[i]), str(all_avg_kla_lon_list[i]), str(all_avg_kla_alt_list[i]))
     save_file.write(string_Out)
