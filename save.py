@@ -68,6 +68,49 @@ def ECEF_to_Local(x, y, z):
 
     local_pos = np.matmul(np.array(ROT_MAT), np.array(diff_ECEF))
     return local_pos
+
+# Linear Interpolation
+# input description : l will be interpolated list, value will be changed element
+# ex) l = [0, 0, 1, 0, 0, 0, 5, 0]
+# ex) l' = linear_Interpolation(l, 0)
+# ex) l' = [0, 0, 1, 2, 3, 4, 5, 0]
+def linear_Interpolation(l, value):
+    flag = 0 # 0 : find start position / 1 : find end position
+    ret_list = l
+
+    cnt = 0
+    if (ret_list[0] == value):
+        while True:
+            cnt += 1
+            if (ret_list[cnt] != value):
+                break
+
+    start_index = cnt
+    end_index = 0
+
+    for i in range(start_index, len(ret_list)):
+        if (flag == 0 and ret_list[i] == value):
+            start_index = i-1
+            flag = 1
+        elif (flag == 1 and ret_list[i] != value):
+            end_index = i
+            flag = 0
+            
+            interval = end_index - start_index
+            add_value = (ret_list[end_index] - ret_list[start_index])/float(interval)
+
+            for j in range(1, interval):
+                ret_list[start_index + j] = ret_list[start_index] + add_value * j
+
+    return ret_list
+
+# find start, end index first instance of NOT value in list
+# ex) l = [0, 0, 1, 0, 2, 0], value = 0
+# ex) return value = [2, 4]
+def find_start_end_index(l, value):
+    start_index = next((i for i, x in enumerate(l) if x != value), None)
+    end_index = next((i for i, x in reversed(list(enumerate(l))) if x != value), None)
+    return start_index, end_index
 ###################################
 
 opv_time_list = []
@@ -246,33 +289,16 @@ for time in range(start_time, end_time + 1):
 
 #######################################################
 # Linear Interpolation
-# ex) distance list = [0, 0, 1, 0, 0, 0, 5, 0] --> [0, 0, 1, 2, 3, 4, 5, 0]
-flag = 0 # 0 : find start position / 1 : find end position
-interpol_distance_list = distance_list
 
-cnt = 0
-if (interpol_distance_list[0] == 0):
-    while True:
-        cnt += 1
-        if (interpol_distance_list[cnt] != 0):
-            break
+interpol_distance_list = linear_Interpolation(distance_list, 0)
 
-start_index = cnt
-end_index = 0
+interpol_kla_lat_list = linear_Interpolation(all_avg_kla_lat_list, 0)
+interpol_kla_lon_list = linear_Interpolation(all_avg_kla_lon_list, 0)
+interpol_kla_alt_list = linear_Interpolation(all_avg_kla_alt_list, 0)
 
-for i in range(start_index, len(interpol_distance_list)):
-    if (flag == 0 and interpol_distance_list[i] == 0):
-        start_index = i-1
-        flag = 1
-    elif (flag == 1 and interpol_distance_list[i] != 0):
-        end_index = i
-        flag = 0
-        
-        interval = end_index - start_index
-        add_value = (interpol_distance_list[end_index] - interpol_distance_list[start_index])/float(interval)
-
-        for j in range(1, interval):
-            interpol_distance_list[start_index + j] = interpol_distance_list[start_index] + add_value * j
+interpol_opv_lat_list = linear_Interpolation(all_avg_opv_lat_list, 0)
+interpol_opv_lon_list = linear_Interpolation(all_avg_opv_lon_list, 0)
+interpol_opv_alt_list = linear_Interpolation(all_avg_opv_alt_list, 0)
 
 save_file = open(args.save_file, 'w')
 strFormat = '%-20s%-20s%-20s%-20s%-20s%-20s%-20s%-20s\n'
@@ -281,15 +307,28 @@ save_file.write(index_Out)
 
 for i in range(len(time_list)):
     string_Out = strFormat % (str(time_list[i]), str(interpol_distance_list[i]), \
-                            str(all_avg_opv_lat_list[i]), str(all_avg_opv_lon_list[i]), str(all_avg_opv_alt_list[i]), \
-                            str(all_avg_kla_lat_list[i]), str(all_avg_kla_lon_list[i]), str(all_avg_kla_alt_list[i]))
+                            str(interpol_opv_lat_list[i]), str(interpol_opv_lon_list[i]), str(interpol_opv_alt_list[i]), \
+                            str(interpol_kla_lat_list[i]), str(interpol_kla_lon_list[i]), str(interpol_kla_alt_list[i]))
     save_file.write(string_Out)
 
 save_file.close()
 
+# Crop Non Zero Element start end part
+opv_lat_start_index, opv_lat_end_index = find_start_end_index(interpol_opv_lat_list, 0)
+crop_interpol_opv_lat_list = interpol_opv_lat_list[opv_lat_start_index:opv_lat_end_index+1]
+
+opv_lon_start_index, opv_lon_end_index = find_start_end_index(interpol_opv_lon_list, 0)
+crop_interpol_opv_lon_list = interpol_opv_lon_list[opv_lon_start_index:opv_lon_end_index+1]
+
+kla_lat_start_index, kla_lat_end_index = find_start_end_index(interpol_kla_lat_list, 0)
+crop_interpol_kla_lat_list = interpol_kla_lat_list[kla_lat_start_index:kla_lat_end_index+1]
+
+kla_lon_start_index, kla_lon_end_index = find_start_end_index(interpol_kla_lon_list, 0)
+crop_interpol_kla_lon_list = interpol_kla_lon_list[kla_lon_start_index:kla_lon_end_index+1]
+
 # Plot Part
-plt.plot(avg_opv_lat_list, avg_opv_lon_list)
-plt.plot(avg_kla_lat_list, avg_kla_lon_list)
+plt.plot(crop_interpol_opv_lat_list, crop_interpol_opv_lon_list)
+plt.plot(crop_interpol_kla_lat_list, crop_interpol_kla_lon_list)
 
 plt.legend(['OPV', 'KLA'])
 plt.xlabel('LAT')
